@@ -85,7 +85,7 @@ class Client:
         self.last_playing_message = await ctx.respond(
             f"Playing {song_info['title']}",
             embed=self.generatePlayingEmbed(ctx, song_info),
-            view=PlayingView(self, ctx),
+            view=PlayingView(self, ctx, timeout=(song_info["duration"] * 2)),
         )
 
     async def pause(self, ctx):
@@ -148,6 +148,7 @@ class Client:
         results = YoutubeSearch(str(query), max_results=30)
         results = json.loads(results.to_json())
 
+        # 5 minutes timeout
         search_embed = await self.generateSearchEmbed(ctx, results)
 
         search_view = (

@@ -5,12 +5,15 @@ from discord.ext import commands
 class SearchView(
     discord.ui.View
 ):  # Create a class called MyView that subclasses discord.ui.View
-    def __init__(self, client, ctx, search_results, start_index=0):
+    def __init__(self, client, ctx, search_results, start_index=0, timeout=5000):
         self.client = client
         self.ctx = ctx
         self.search_results = search_results
         self.start_index = start_index
-        super().__init__()
+        super().__init__(timeout=timeout)
+
+    async def on_timeout(self):
+        self.disable_all_items()
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="1️⃣")
     async def one_button_callback(self, button, interaction):

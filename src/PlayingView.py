@@ -5,16 +5,19 @@ from discord.ext import commands
 class PlayingView(
     discord.ui.View
 ):  # Create a class called MyView that subclasses discord.ui.View
-    def __init__(self, client, ctx):
+    def __init__(self, client, ctx, timeout=5000):
         self.client = client
         self.ctx = ctx
-        super().__init__()
+        super().__init__(timeout=timeout)
 
         if self.client.looping is True:
             self.children[4].style = discord.ButtonStyle.success
         else:
             self.children[4].style = discord.ButtonStyle.secondary
         # discord.ButtonStyle.secondary
+
+    async def on_timeout(self):
+        self.disable_all_items()
 
     @discord.ui.button(
         label="", style=discord.ButtonStyle.secondary, disabled=True, emoji="⏮"
