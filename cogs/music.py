@@ -15,8 +15,7 @@ class Music(commands.Cog):
         self.clients = {}
 
     @discord.slash_command(
-        description="Join the voice channel you are currently in",
-        guild_ids=[os.getenv("GUILD_ID")],
+        description="Join the voice channel you are currently in", cog="music"
     )
     async def join(self, ctx):
         channel = ctx.author.voice.channel
@@ -28,9 +27,7 @@ class Music(commands.Cog):
         await ctx.respond(f"Joined {channel}")
         return True
 
-    @discord.slash_command(
-        description="Leave the voice channel", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Leave the voice channel")
     async def leave(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
@@ -38,7 +35,7 @@ class Music(commands.Cog):
         await ctx.voice_client.disconnect()
         await ctx.respond("Left the voice channel")
 
-    @discord.slash_command(description="Play a song", guild_ids=[os.getenv("GUILD_ID")])
+    @discord.slash_command(description="Play a song")
     async def play(self, ctx, url_or_search: str):
 
         if ctx.voice_client is None:
@@ -55,9 +52,7 @@ class Music(commands.Cog):
     async def search(self, ctx, query):
         await self.clients[ctx.guild.id].search(ctx, query)
 
-    @discord.slash_command(
-        description="Pause the current song", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Pause the current song")
     async def pause(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
@@ -65,9 +60,7 @@ class Music(commands.Cog):
         await self.clients[ctx.guild.id].pause(ctx)
         await ctx.respond("Paused the song")
 
-    @discord.slash_command(
-        description="Resume the current song", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Resume the current song")
     async def resume(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
@@ -75,9 +68,7 @@ class Music(commands.Cog):
         await self.clients[ctx.guild.id].resume(ctx)
         await ctx.respond("Resumed the song")
 
-    @discord.slash_command(
-        description="Skip the current song", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Skip the current song")
     async def skip(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
@@ -85,9 +76,7 @@ class Music(commands.Cog):
         await self.clients[ctx.guild.id].skip(ctx)
         await ctx.respond("Skipped the song")
 
-    @discord.slash_command(
-        description="Go back to the previous song", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Go back to the previous song")
     async def back(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
@@ -95,9 +84,7 @@ class Music(commands.Cog):
         await self.clients[ctx.guild.id].back(ctx)
         await ctx.respond("Went back to the previous song")
 
-    @discord.slash_command(
-        description="Stop the current song", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Stop the current song")
     async def stop(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
@@ -105,9 +92,7 @@ class Music(commands.Cog):
         await self.clients[ctx.guild.id].stop(ctx)
         await ctx.respond("Stopped the song")
 
-    @discord.slash_command(
-        description="Toggle loop mode", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Toggle loop mode")
     async def loop(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
@@ -118,9 +103,7 @@ class Music(commands.Cog):
         else:
             await ctx.respond("Stopped looping current song")
 
-    @discord.slash_command(
-        description="Toggle shuffle mode", guild_ids=[os.getenv("GUILD_ID")]
-    )
+    @discord.slash_command(description="Toggle shuffle mode")
     async def shuffle(self, ctx):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
