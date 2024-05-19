@@ -17,58 +17,63 @@ class SearchView(
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="1️⃣")
     async def one_button_callback(self, button, interaction):
+        self.disable_all_items()
+
         video = self.search_results["videos"][self.start_index]
 
         await self.client.addSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
-        self.disable_all_items()
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(view=None)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="2️⃣")
     async def two_button_callback(self, button, interaction):
+        self.disable_all_items()
+
         video = self.search_results["videos"][self.start_index + 1]
 
         await self.client.addSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
-        self.disable_all_items()
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(view=None)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="3️⃣")
     async def three_button_callback(self, button, interaction):
+        self.disable_all_items()
+
         video = self.search_results["videos"][self.start_index + 2]
 
         await self.client.addSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
-        self.disable_all_items()
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(view=None)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="4️⃣")
     async def four_button_callback(self, button, interaction):
+        self.disable_all_items()
+
         video = self.search_results["videos"][self.start_index + 3]
 
         await self.client.addSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
-        self.disable_all_items()
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(view=None)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="5️⃣")
     async def five_button_callback(self, button, interaction):
+        self.disable_all_items()
+
         video = self.search_results["videos"][self.start_index + 4]
 
         await self.client.addSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
-        self.disable_all_items()
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(view=None)
 
     @discord.ui.button(
         label="", disabled=True, style=discord.ButtonStyle.secondary, emoji="⬅️"

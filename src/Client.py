@@ -31,7 +31,8 @@ class Client:
             await ctx.respond("You are not in a voice channel")
             return False
 
-    async def addSong(self, ctx, url):
+    async def extract_and_add_song(self, url):
+
         ydl_opts = {
             "format": "bestaudio",
             "extract_info": True,  # Only extract information
@@ -42,14 +43,18 @@ class Client:
             song_info = ydl.extract_info(url, download=False)
             self.queue.append(song_info)
 
+    async def addSong(self, ctx, url):
+        print(str(len(self.queue)) + " songs in queue")
         # We start playing upon adding the first song
-        if len(self.queue) == 1:
-            await self.startPlaying(ctx)
-        else:
+        if len(self.queue) > 0:
             await ctx.respond(
                 "",
-                embed=self.generateQueueEmbed(ctx, song_info),
+                embed=self.generateQueueEmbed(ctx),
             )
+            asyncio.create_task(self.extract_and_add_song(url))
+        else:
+            await self.extract_and_add_song(url)
+            await self.startPlaying(ctx)
 
     async def startPlaying(self, ctx):
         print("Start playing")
@@ -214,19 +219,10 @@ class Client:
             print("Error editing message: ", e)
             print("Time: ", datetime.datetime.now())
 
-    def generateQueueEmbed(self, ctx, song_info):
+    def generateQueueEmbed(self, ctx):
 
-        color = self.getAvgColorOfThumbnail(song_info["thumbnail"])
-
-        embed = discord.Embed(
-            title="Song added to queue: ",
-            description=song_info["title"],
-            color=self.getAvgColorOfThumbnail(
-                song_info["thumbnail"]
-            ),  # Pycord provides a class with default colors you can choose from
-        )
+        embed = discord.Embed(title="Song added to queue")
         embed.set_author(name=ctx.author, icon_url=ctx.user.display_avatar.url)
-        embed.set_thumbnail(url=song_info["thumbnail"])
 
         return embed
 
@@ -302,7 +298,8 @@ class Client:
             print("Queue is empty")
             try:
                 await self.last_playing_message.delete()
-                await ctx.voice_client.disconnect(force=True)
+                if ctx.voice_client is not None:
+                    await ctx.voice_client.disconnect(force=True)
             except Exception as e:
                 print("Error deleting message: ", e)
                 print("Time: ", datetime.datetime.now())

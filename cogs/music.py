@@ -22,6 +22,11 @@ class Music(commands.Cog):
         if channel is None:
             await ctx.respond("You are not in a voice channel")
             return False
+
+        # Handle if bot is already in a voice channel
+        if ctx.voice_client is not None:
+            await self.disconnect(ctx)
+
         await channel.connect()
         # Respond that bot joined the channel by linking channel
         await ctx.respond(f"Joined {channel}")
@@ -32,15 +37,17 @@ class Music(commands.Cog):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
             return
-        await ctx.voice_client.disconnect()
+        await self.disconnect(ctx)
         await ctx.respond("Left the voice channel")
 
     @discord.slash_command(description="Play a song")
     async def play(self, ctx, url_or_search: str):
 
+        await ctx.defer()
+
         if ctx.voice_client is None:
             if await self.join(ctx) == False:
-                await ctx.respond("Join a voice channel before playing a song")
+                await ctx.respond("Failed to join channel")
                 return
         self.checkAddClient(ctx)
 
@@ -126,6 +133,10 @@ class Music(commands.Cog):
             else:
                 await ctx.send("You are not connected to a voice channel. IDIOT!")
                 raise commands.CommandError("Author not connected to a voice channel.")
+
+    async def disconnect(self, ctx):
+        await ctx.voice_client.disconnect()
+        self.clients.pop(ctx.guild.id)
 
     def checkAddClient(self, ctx):
         if ctx.guild.id not in self.clients:
