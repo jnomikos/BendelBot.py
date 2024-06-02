@@ -45,8 +45,6 @@ class PlayingView(
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="⏭")
     async def skip_button_callback(self, button, interaction):
         await self.client.skip(self.ctx)
-        if len(self.client.queue) > 0:
-            await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.secondary, emoji="⏹")
     async def stop_button_callback(self, button, interaction):

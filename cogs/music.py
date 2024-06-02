@@ -51,7 +51,10 @@ class Music(commands.Cog):
                 return
         self.checkAddClient(ctx)
 
-        if self.is_youtube_url(url_or_search) == False:
+        if self.is_youtube_playlist_url(url_or_search) == True:
+            await self.clients[ctx.guild.id].addYoutubePlaylist(ctx, url_or_search)
+            return
+        elif self.is_youtube_url(url_or_search) == False:
             await self.search(ctx, url_or_search)
             return
         await self.clients[ctx.guild.id].addSong(ctx, url_or_search)
@@ -148,6 +151,13 @@ class Music(commands.Cog):
 
     def removeClient(self, ctx):
         self.clients.pop(ctx.guild.id)
+
+    ### REGEX FUNCTIONS - FOR MATCHING URLS ###
+    def is_youtube_playlist_url(self, url):
+        youtube_playlist_regex = (
+            r"https:\/\/www\.youtube\.com\/watch\?[^ ]*?(&|\?)list=([^&]+)"
+        )
+        return re.match(youtube_playlist_regex, url) is not None
 
     def is_youtube_url(self, url):
         youtube_regex = r"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(?:-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?)([\w\-]+)(\S+)?$"

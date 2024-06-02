@@ -6,6 +6,7 @@ import json
 import discord
 from discord.ext import commands
 
+import re
 import cv2
 import numpy
 import random
@@ -36,6 +37,7 @@ class Client:
         ydl_opts = {
             "format": "bestaudio",
             "extract_info": True,  # Only extract information
+            "extract_flat": True,  # Extract information in a flat dictionary
             "skip_download": True,  # Do not download the video
         }
 
@@ -43,8 +45,20 @@ class Client:
             song_info = ydl.extract_info(url, download=False)
             self.queue.append(song_info)
 
+    async def extract_direct_song_info(self, url):
+        ydl_opts = {
+            "format": "bestaudio",
+            "extract_info": True,  # Only extract information
+            "extract_flat": False,  # Extract information in a flat dictionary
+            "skip_download": True,  # Do not download the video
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            return ydl.extract_info(url, download=False)
+
     async def addSong(self, ctx, url):
         print(str(len(self.queue)) + " songs in queue")
+
         # We start playing upon adding the first song
         if len(self.queue) > 0:
             await ctx.respond(
@@ -57,28 +71,8 @@ class Client:
             await self.startPlaying(ctx)
 
     async def startPlaying(self, ctx):
-        print("Start playing")
-
-        ffmpeg_options = {
-            "options": "-vn",
-            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-        }
-
+        # Display user feedback before all else, so the user knows the bot is working
         song_info = self.queue[0]
-        event_loop = asyncio.get_event_loop()
-
-        try:
-            ctx.voice_client.play(
-                discord.FFmpegPCMAudio(song_info["url"], **ffmpeg_options),
-                after=lambda audio: asyncio.run_coroutine_threadsafe(
-                    self.after(ctx), event_loop
-                ),
-            )
-        except Exception as e:
-            await ctx.respond("There was an error playing this song. Please try again.")
-            print("Error playing song: ", e)
-            return
-
         if self.last_playing_message is not None:
             try:
                 await self.last_playing_message.delete()
@@ -92,6 +86,27 @@ class Client:
             embed=self.generatePlayingEmbed(ctx, song_info),
             view=PlayingView(self, ctx, timeout=(song_info["duration"] * 2)),
         )
+
+        extracted_song = await self.extract_direct_song_info(self.queue[0]["url"])
+
+        ffmpeg_options = {
+            "options": "-vn",
+            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+        }
+
+        event_loop = asyncio.get_event_loop()
+
+        try:
+            ctx.voice_client.play(
+                discord.FFmpegPCMAudio(extracted_song["url"], **ffmpeg_options),
+                after=lambda audio: asyncio.run_coroutine_threadsafe(
+                    self.after(ctx), event_loop
+                ),
+            )
+        except Exception as e:
+            await ctx.respond("There was an error playing this song. Please try again.")
+            print("Error playing song: ", e)
+            return
 
     async def pause(self, ctx):
         try:
@@ -164,6 +179,33 @@ class Client:
             "Search Results:", embed=search_embed, view=search_view
         )
 
+    async def addYoutubePlaylist(self, ctx, url):
+        ydl_opts = {
+            "format": "bestaudio",
+            "extract_info": True,
+            "extract_flat": "in_playlist",
+            "skip_download": True,
+            "quiet": True,
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            playlist_info = ydl.extract_info(url, download=False)
+
+        start_len = len(self.queue)
+
+        if "entries" in playlist_info:
+            for entry in playlist_info["entries"]:
+                self.queue.append(entry)
+        else:
+            print("No entries found in playlist")
+            await ctx.respond("No songs found in playlist. Weird playlist 😕")
+            return
+
+        await ctx.respond("Songs added to queue")
+
+        if start_len == 0:
+            await self.startPlaying(ctx)
+
     def loop(self):
         self.looping = not self.looping
         return self.looping
@@ -186,6 +228,8 @@ class Client:
             title=state,
             color=self.getAvgColorOfThumbnail(
                 song_info["thumbnail"]
+                if "thumbnail" in song_info
+                else song_info["thumbnails"][0]["url"]
             ),  # Pycord provides a class with default colors you can choose from
         )
 
@@ -204,7 +248,17 @@ class Client:
         embed.set_thumbnail(
             url="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Logo_of_YouTube_%282015-2017%29.svg/502px-Logo_of_YouTube_%282015-2017%29.svg.png"
         )
-        embed.set_image(url=song_info["thumbnail"])
+        embed.set_image(
+            url=(
+                song_info["thumbnail"]
+                if "thumbnail" in song_info
+                else (
+                    song_info["thumbnails"][0]["url"]
+                    if "thumbnails" in song_info
+                    else ""
+                )
+            )
+        )
 
         return embed
 
