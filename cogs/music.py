@@ -6,6 +6,9 @@ import os  # default module
 import json
 import asyncio
 
+import logging
+import colorlog
+
 from src.Client import Client
 
 
@@ -13,6 +16,47 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.clients = {}
+
+        self.bot.loop.create_task(self.client_garbage_collector())
+
+        handler = colorlog.StreamHandler()
+
+        # Create a formatter
+        formatter = colorlog.ColoredFormatter(
+            "%(log_color)s[%(levelname)s] [%(name)s] %(message)s%(reset)s",
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "bold_red",
+            },
+            secondary_log_colors={},
+            style="%",
+        )
+
+        handler.setFormatter(formatter)
+
+        logging.basicConfig(
+            format="[%(levelname)s] [%(name)s] [%(message)s]",
+            level=logging.INFO,
+            handlers=[handler],
+        )
+
+    # Clear out clients who are inactive to save resources
+    async def client_garbage_collector(self):
+        try:
+            while True:
+                await asyncio.sleep(1)
+                logging.debug("Garbage collector heartbeat")
+                for guild_id in list(self.clients):
+                    if self.clients[guild_id].inactive is True:
+                        self.clients.pop(guild_id)
+                        logging.info(
+                            f"Removed Client for guild {guild_id} due to inactivity"
+                        )
+        except Exception as e:
+            logging.error(f"Error in client garbage collector: {e}")
 
     @discord.slash_command(
         description="Join the voice channel you are currently in", cog="music"
@@ -53,11 +97,16 @@ class Music(commands.Cog):
 
         if self.is_youtube_playlist_url(url_or_search) == True:
             await self.clients[ctx.guild.id].addYoutubePlaylist(ctx, url_or_search)
-            return
-        elif self.is_youtube_url(url_or_search) == False:
+        elif self.is_youtube_url(url_or_search) == True:
+            logging.info("Adding youtube song")
+            await self.clients[ctx.guild.id].addYoutubeSong(ctx, url_or_search)
+        elif self.is_url(url_or_search) == False:
+            logging.info("Searching for song")
             await self.search(ctx, url_or_search)
-            return
-        await self.clients[ctx.guild.id].addSong(ctx, url_or_search)
+        else:
+            await ctx.respond(
+                "<:bendelwhat:894084854185074709> Invalid URL or search query"
+            )
 
     async def search(self, ctx, query):
         await self.clients[ctx.guild.id].search(ctx, query)
@@ -83,6 +132,11 @@ class Music(commands.Cog):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
             return
+        if ctx.guild.id not in self.clients:
+            await ctx.respond(
+                "I have not played any songs recently and am currently not playing."
+            )
+            return
         await self.clients[ctx.guild.id].skip(ctx)
         await ctx.respond("Skipped the song")
 
@@ -91,8 +145,12 @@ class Music(commands.Cog):
         if ctx.voice_client is None:
             await ctx.respond("I am not in a voice channel")
             return
+        if ctx.guild.id not in self.clients:
+            await ctx.respond(
+                "I have not played any songs recently and am currently not playing."
+            )
+            return
         await self.clients[ctx.guild.id].back(ctx)
-        await ctx.respond("Went back to the previous song")
 
     @discord.slash_command(description="Stop the current song")
     async def stop(self, ctx):
@@ -121,6 +179,14 @@ class Music(commands.Cog):
 
         await self.clients[ctx.guild.id].shuffle(ctx)
 
+    @discord.slash_command(description="View the current queue")
+    async def queue(self, ctx):
+        if ctx.voice_client is None:
+            await ctx.respond("I am not in a voice channel")
+            return
+
+        await self.clients[ctx.guild.id].view_queue(ctx)
+
     @play.before_invoke
     @stop.before_invoke
     @skip.before_invoke
@@ -134,7 +200,7 @@ class Music(commands.Cog):
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
-                await ctx.send("You are not connected to a voice channel. IDIOT!")
+                await ctx.respond("You are not connected to a voice channel. IDIOT!")
                 raise commands.CommandError("Author not connected to a voice channel.")
 
     async def disconnect(self, ctx):
@@ -146,7 +212,7 @@ class Music(commands.Cog):
             self.addClient(ctx)
 
     def addClient(self, ctx):
-        client = Client()
+        client = Client(ctx)
         self.clients[ctx.guild.id] = client
 
     def removeClient(self, ctx):
@@ -160,8 +226,12 @@ class Music(commands.Cog):
         return re.match(youtube_playlist_regex, url) is not None
 
     def is_youtube_url(self, url):
-        youtube_regex = r"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(?:-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?)([\w\-]+)(\S+)?$"
+        youtube_regex = r"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(?:-nocookie)?\.com|youtu.be))(\/(?!results\?search_query)(?:[\w\-]+\?v=|embed\/|live\/|v\/)?)([\w\-]+)(\S+)?$"
         return re.match(youtube_regex, url) is not None
+
+    def is_url(self, url):
+        url_regex = r"^(http|https)://"
+        return re.match(url_regex, url) is not None
 
 
 def setup(bot):  # this is called by Pycord to setup the cog

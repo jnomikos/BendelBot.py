@@ -1,5 +1,4 @@
 import discord
-from discord.ext import commands
 
 
 class PlayingView(
@@ -14,6 +13,16 @@ class PlayingView(
             self.children[4].style = discord.ButtonStyle.success
         else:
             self.children[4].style = discord.ButtonStyle.secondary
+
+        if self.client.paused is True:
+            self.children[1].style = discord.ButtonStyle.success
+        else:
+            self.children[1].style = discord.ButtonStyle.secondary
+
+        if len(self.client.history) == 0:
+            self.children[0].disabled = True
+        else:
+            self.children[0].disabled = False
         # discord.ButtonStyle.secondary
 
     async def on_timeout(self):
@@ -23,11 +32,7 @@ class PlayingView(
         label="", style=discord.ButtonStyle.secondary, disabled=True, emoji="⏮"
     )
     async def back_button_callback(self, button, interaction):
-        if len(self.client.history) == 0:
-            button.disabled = True
-            await interaction.response.edit_message(view=self)
-        else:
-            button.disabled = False
+        if len(self.client.history) != 0:
             await self.client.back(self.ctx)
             await interaction.response.edit_message(view=self)
 

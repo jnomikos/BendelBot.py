@@ -21,7 +21,7 @@ class SearchView(
 
         video = self.search_results["videos"][self.start_index]
 
-        await self.client.addSong(
+        await self.client.addYoutubeSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
@@ -33,7 +33,7 @@ class SearchView(
 
         video = self.search_results["videos"][self.start_index + 1]
 
-        await self.client.addSong(
+        await self.client.addYoutubeSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
@@ -45,7 +45,7 @@ class SearchView(
 
         video = self.search_results["videos"][self.start_index + 2]
 
-        await self.client.addSong(
+        await self.client.addYoutubeSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
@@ -57,7 +57,7 @@ class SearchView(
 
         video = self.search_results["videos"][self.start_index + 3]
 
-        await self.client.addSong(
+        await self.client.addYoutubeSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
@@ -69,7 +69,7 @@ class SearchView(
 
         video = self.search_results["videos"][self.start_index + 4]
 
-        await self.client.addSong(
+        await self.client.addYoutubeSong(
             self.ctx, "https://www.youtube.com" + video["url_suffix"]
         )
 
@@ -81,7 +81,7 @@ class SearchView(
     async def back_button_callback(self, button, interaction):
         if self.start_index > 0:
             self.start_index -= 5
-            await self.client.refreshSearchEmbed(
+            await self.client.embed_helper.refreshSearchEmbed(
                 self.ctx, self.search_results, self.start_index
             )
         self.next_back_check()
@@ -93,7 +93,7 @@ class SearchView(
     async def next_button_callback(self, button, interaction):
         if self.start_index + 5 < len(self.search_results["videos"]):
             self.start_index += 5
-            await self.client.refreshSearchEmbed(
+            await self.client.embed_helper.refreshSearchEmbed(
                 self.ctx, self.search_results, self.start_index
             )
 
@@ -119,8 +119,6 @@ class SearchView(
         else:
             self.children[5].disabled = False
             print("Enabled back button")
-
-        print("Start index: " + str(self.start_index))
 
     def song_available_check(self):
         # Check if next 5 songs are available
