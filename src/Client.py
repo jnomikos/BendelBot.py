@@ -4,7 +4,7 @@ import asyncio
 import json
 
 import discord
-from discord.ext import commands
+from discord.ext import tasks
 
 import logging
 import random
@@ -34,69 +34,66 @@ class Client:
         self.queue_empty_start_time = None
         self.paused_start_time = None
 
-        self.heartbeat_task = None
-
         self.empty_leave_timeout_s = 60 * 10  # 10 minutes empty before leaving
         self.inactive = False
 
+    @tasks.loop(seconds=1)
     async def heartbeat(self, ctx):
         try:
-            while True:
-                await asyncio.sleep(1)
-                logging.debug("Heartbeat")
-                if self.voice_client is not None and (self.voice_client.is_playing()):
-                    self.inactive = False
-                    self.queue_empty_start_time = None
+            logging.debug("Heartbeat")
+            if self.voice_client is not None and (self.voice_client.is_playing()):
+                self.inactive = False
+                self.queue_empty_start_time = None
 
-                    if (
-                        self.paused_start_time is not None
-                        and self.playback_start_time is not None
-                    ):
-                        time_since_paused = int(
-                            (datetime.now() - self.paused_start_time).total_seconds()
-                        )
-
-                        self.playback_start_time += timedelta(seconds=time_since_paused)
-
-                        self.paused_start_time = None
-
-                        continue
-
-                    # If the bot is playing, update the time spent playing the song
-                    if self.playback_start_time is None:
-                        self.playback_start_time = datetime.now()
-                    self.time_spent_playing = int(
-                        (datetime.now() - self.playback_start_time).total_seconds()
+                if (
+                    self.paused_start_time is not None
+                    and self.playback_start_time is not None
+                ):
+                    time_since_paused = int(
+                        (datetime.now() - self.paused_start_time).total_seconds()
                     )
-                elif self.voice_client is not None and self.voice_client.is_paused():
-                    logging.info("Client is currently paused")
-                elif len(self.queue) > 0:
-                    logging.info(
-                        "Client is not playing, but has songs in queue. Waiting for next song"
+
+                    self.playback_start_time += timedelta(seconds=time_since_paused)
+
+                    self.paused_start_time = None
+
+                    return
+
+                # If the bot is playing, update the time spent playing the song
+                if self.playback_start_time is None:
+                    self.playback_start_time = datetime.now()
+                self.time_spent_playing = int(
+                    (datetime.now() - self.playback_start_time).total_seconds()
+                )
+            elif self.voice_client is not None and self.voice_client.is_paused():
+                logging.info("Client is currently paused")
+            elif len(self.queue) > 0:
+                logging.info(
+                    "Client is not playing, but has songs in queue. Waiting for next song"
+                )
+                # await self.after(ctx)
+            else:
+                self.playback_start_time = None
+
+                # Set start time of queue being empty if it is not already set
+                if self.queue_empty_start_time is None:
+                    self.queue_empty_start_time = datetime.now()
+
+                time_spent_empty = (
+                    datetime.now() - self.queue_empty_start_time
+                ).total_seconds()
+
+                # Once the bot has been empty past the timeout, disconnect
+                if (
+                    time_spent_empty > self.empty_leave_timeout_s
+                    and ctx.voice_client is not None
+                ):
+                    await ctx.voice_client.disconnect(force=True)
+                    await ctx.send(
+                        "Left the voice channel due to inactivity <:Bendel_Okay:1093427064595558470>"
                     )
-                    # await self.after(ctx)
-                else:
-                    self.playback_start_time = None
-
-                    # Set start time of queue being empty if it is not already set
-                    if self.queue_empty_start_time is None:
-                        self.queue_empty_start_time = datetime.now()
-
-                    time_spent_empty = (
-                        datetime.now() - self.queue_empty_start_time
-                    ).total_seconds()
-
-                    # Once the bot has been empty past the timeout, disconnect
-                    if (
-                        time_spent_empty > self.empty_leave_timeout_s
-                        and ctx.voice_client is not None
-                    ):
-                        await ctx.voice_client.disconnect(force=True)
-                        await ctx.send(
-                            "Left the voice channel due to inactivity <:Bendel_Okay:1093427064595558470>"
-                        )
-                        self.inactive = True
-                        break  # No need to continue the loop
+                    self.inactive = True
+                    self.heartbeat.cancel()
         except Exception as e:
             logging.error(f"Error in heartbeat: {e}")
 
@@ -175,8 +172,8 @@ class Client:
         logging.info(f"Added song to queue: {url}, {len(self.queue)} songs in queue")
 
     async def startPlaying(self, ctx):
-        if self.heartbeat_task is None or self.heartbeat_task.done():
-            self.heartbeat_task = asyncio.create_task(self.heartbeat(ctx))
+        if not self.heartbeat.is_running():
+            self.heartbeat.start(ctx)
 
         if not self.embed_helper.refreshPlayingEmbed.is_running():
             self.embed_helper.refreshPlayingEmbed.start(ctx)
