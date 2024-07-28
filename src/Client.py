@@ -41,7 +41,17 @@ class Client:
     async def heartbeat(self, ctx):
         try:
             logging.debug("Heartbeat")
-            if self.voice_client is not None and (self.voice_client.is_playing()):
+
+            if (
+                self.voice_client is not None
+                and len(ctx.voice_client.channel.members) == 1
+            ):
+                await ctx.send(
+                    "No users in channel. I am not going to play for myself. I'm leaving <:Bendel_Okay:1093427064595558470>"
+                )
+
+                self.heartbeat.stop()
+            elif self.voice_client is not None and (self.voice_client.is_playing()):
                 self.inactive = False
                 self.queue_empty_start_time = None
 
@@ -86,16 +96,22 @@ class Client:
                 # Once the bot has been empty past the timeout, disconnect
                 if (
                     time_spent_empty > self.empty_leave_timeout_s
-                    and ctx.voice_client is not None
+                    and self.voice_client is not None
                 ):
-                    await ctx.voice_client.disconnect(force=True)
-                    await ctx.send(
-                        "Left the voice channel due to inactivity <:Bendel_Okay:1093427064595558470>"
-                    )
-                    self.inactive = True
-                    self.heartbeat.cancel()
+                    self.heartbeat.stop()
         except Exception as e:
             logging.error(f"Error in heartbeat: {e}")
+
+    @heartbeat.after_loop
+    async def clean_and_leave(self):
+        logging.warning("Heartbeat loop has stopped. Cleaning up and leaving")
+        self.inactive = True
+        self.queue = []
+        self.history = []
+        self.embed_helper.refreshPlayingEmbed.cancel()
+
+        if self.voice_client is not None:
+            await self.voice_client.disconnect(force=True)
 
     async def checkValidAction(self, ctx):
         channel = ctx.author.voice.channel
@@ -210,7 +226,20 @@ class Client:
 
         try:
             self.playback_start_time = datetime.now()
-            ctx.voice_client.play(
+            if self.voice_client is None:
+                logging.warning("Lost voice client")
+                try:
+                    await ctx.send(
+                        "Lost voice client. Discord probably booted us out. Exiting"
+                    )
+
+                    self.heartbeat.cancel()
+
+                    return
+                except Exception as e:
+                    logging.error(f"Error sending message: {e}, Time: {datetime.now()}")
+
+            self.voice_client.play(
                 discord.FFmpegOpusAudio(extracted_song["url"], **ffmpeg_options),
                 after=lambda audio: asyncio.run_coroutine_threadsafe(
                     self.after(ctx), event_loop
