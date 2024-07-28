@@ -6,7 +6,6 @@ from discord.ext import tasks
 import numpy
 import urllib.request
 import logging
-from ratelimit import limits
 
 from src.PlayingView import PlayingView
 from src.SearchView import SearchView
@@ -20,8 +19,6 @@ class EmbedHelper:
     def generateProgressBar(self, time_spent, duration, bar_length=15):
         # Calculate progress percentage
         progress = (time_spent / duration) * 15
-
-        bars = "▁▂▃▄▅▆▇█"
 
         progress_bar = ""
 
