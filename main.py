@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()  # load all the variables from the env file
 
 
-bot = discord.AutoShardedBot()
+bot = discord.Bot()
 cogs_list = ["music"]
 
 for cog in cogs_list:

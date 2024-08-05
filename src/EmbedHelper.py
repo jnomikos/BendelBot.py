@@ -86,7 +86,7 @@ class EmbedHelper:
 
         return embed
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(seconds=30)
     async def refreshPlayingEmbed(self, ctx):
         try:
             if self.client.last_playing_message is not None:
@@ -108,6 +108,7 @@ class EmbedHelper:
                 retry_after = e.retry_after
                 print(f"Rate limited. Retrying after {retry_after} seconds.")
                 await asyncio.sleep(retry_after)
+                await self.refreshPlayingEmbed(ctx)  # Retry the update
         except Exception as e:
             logging.error(
                 f"Error editing message: {e}, Time: {datetime.datetime.now()}"

@@ -266,6 +266,7 @@ class Client:
 
         self.paused_start_time = datetime.now()
         self.paused = True
+        await self.embed_helper.refreshPlayingEmbed(ctx)
 
     async def resume(self, ctx):
         try:
@@ -276,6 +277,7 @@ class Client:
             )
 
         self.paused = False
+        await self.embed_helper.refreshPlayingEmbed(ctx)
 
     async def skip(self, ctx):
         if self.add_song_task is not None and not self.add_song_task.done():
