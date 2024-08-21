@@ -101,6 +101,7 @@ class Client:
                     self.heartbeat.stop()
         except Exception as e:
             logging.error(f"Error in heartbeat: {e}")
+            self.heartbeat.stop()
 
     @heartbeat.after_loop
     async def clean_and_leave(self):
