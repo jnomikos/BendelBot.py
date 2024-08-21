@@ -37,6 +37,9 @@ class Client:
         self.empty_leave_timeout_s = 60 * 10  # 10 minutes empty before leaving
         self.inactive = False
 
+        self.hb_err_count = 0
+        self.hb_max_err_count = 10
+
     @tasks.loop(seconds=1)
     async def heartbeat(self, ctx):
         try:
@@ -44,7 +47,7 @@ class Client:
 
             if (
                 self.voice_client is not None
-                and len(ctx.voice_client.channel.members) == 1
+                and len(self.voice_client.channel.members) == 1
             ):
                 await ctx.send(
                     "No users in channel. I am not going to play for myself. I'm leaving <:Bendel_Okay:1093427064595558470>"
@@ -99,9 +102,14 @@ class Client:
                     and self.voice_client is not None
                 ):
                     self.heartbeat.stop()
+            self.hb_err_count = 0
         except Exception as e:
             logging.error(f"Error in heartbeat: {e}")
-            self.heartbeat.stop()
+            self.hb_err_count += 1
+
+            if self.hb_err_count > self.hb_max_err_count:
+                logging.error("Too many errors in heartbeat. Stopping heartbeat")
+                self.heartbeat.stop()
 
     @heartbeat.after_loop
     async def clean_and_leave(self):
