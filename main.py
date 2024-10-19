@@ -51,9 +51,4 @@ async def on_ready():
     )
 
 
-@bot.event
-async def on_member_join(member):
-    await member.send(f"Welcome to the server, {member.mention}! Enjoy your stay here.")
-
-
 bot.run(os.getenv("DISCORD_TOKEN"))  # run the bot with the token
