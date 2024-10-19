@@ -4,7 +4,9 @@
 
 You must provide the token to your discord bot in the .env file first.
 
-Navigate to the .env file and provide your token after the `DISCORD_TOKEN=`
+Navigate to the .env.example file. Rename this file to .env.
+
+Provide your token after the `DISCORD_TOKEN=`
 
 As an example
 
