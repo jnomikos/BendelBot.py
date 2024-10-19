@@ -19,30 +19,6 @@ class Music(commands.Cog):
 
         self.bot.loop.create_task(self.client_garbage_collector())
 
-        handler = colorlog.StreamHandler()
-
-        # Create a formatter
-        formatter = colorlog.ColoredFormatter(
-            "%(log_color)s[%(levelname)s] [%(name)s] %(message)s%(reset)s",
-            log_colors={
-                "DEBUG": "cyan",
-                "INFO": "green",
-                "WARNING": "yellow",
-                "ERROR": "red",
-                "CRITICAL": "bold_red",
-            },
-            secondary_log_colors={},
-            style="%",
-        )
-
-        handler.setFormatter(formatter)
-
-        logging.basicConfig(
-            format="[%(levelname)s] [%(name)s] [%(message)s]",
-            level=logging.INFO,
-            handlers=[handler],
-        )
-
     # Clear out clients who are inactive to save resources
     async def client_garbage_collector(self):
         try:
