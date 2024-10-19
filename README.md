@@ -17,8 +17,8 @@ https://discordgsm.com/guide/how-to-get-a-discord-bot-token
 
 # Setup Docker Environment
 
-Run ./tools/build_docker.sh to build the docker container.
+Run `./tools/build_docker.sh` to build the docker container.
 
-Run ./tools/run_docker.sh to run the docker container and bot.
+Run `./tools/run_docker.sh` to run the docker container and bot.
 
 > If you want to run this bot in the background of a server, I recommend using screen or tmux.
