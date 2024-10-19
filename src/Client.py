@@ -144,7 +144,7 @@ class Client:
                 if "duration" in song_info and song_info["duration"] is not None:
                     self.queue.append(song_info)
                 else:
-                    logging.warn(f"Video is private or restricted: {url}")
+                    logging.warning(f"Video is private or restricted: {url}")
                     await ctx.respond(
                         "<:john2:655678319538470912> CRUD DETECTED! THE VIDEO IS PRIVATE OR RESTRICTED! FAILURE TO ADD!"
                     )
@@ -290,7 +290,7 @@ class Client:
 
     async def skip(self, ctx):
         if self.add_song_task is not None and not self.add_song_task.done():
-            logging.warn(
+            logging.warning(
                 f"User attempted to skip before the song was added to the queue"
             )
             return
