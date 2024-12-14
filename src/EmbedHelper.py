@@ -89,6 +89,12 @@ class EmbedHelper:
     @tasks.loop(seconds=30)
     async def refreshPlayingEmbed(self, ctx):
         try:
+            # if queue is empty, we should stop this task because there is nothing to display
+            if len(self.client.queue) == 0:
+                logging.info("Queue is empty. Stopping refreshPlayingEmbed task")
+                self.refreshPlayingEmbed.stop()
+                return
+
             if self.client.last_playing_message is not None:
                 # We fetch message like this to avoid discord server from throwing stupid 'Invalid Webhook Token' errors
                 # If you were to just reply to the ctx, the ctx would eventually become invalid
