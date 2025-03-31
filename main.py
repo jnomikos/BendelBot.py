@@ -37,7 +37,7 @@ logging.basicConfig(
 ### ----------------------------------- ###
 
 bot = discord.Bot()
-cogs_list = ["music"]
+cogs_list = ["music", "fun"]
 
 for cog in cogs_list:
     bot.load_extension(f"cogs.{cog}")
